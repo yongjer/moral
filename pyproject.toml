@@ -1,0 +1,26 @@
+[project]
+name = "moral"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.6.0",
+    "diffusers>=0.33.1",
+    "evaluate>=0.4.3",
+    "exiv2>=0.17.3",
+    "gradio>=5.29.0",
+    "matplotlib>=3.10.3",
+    "multiformats>=0.3.1.post4",
+    "optimum-quanto>=0.2.7",
+    "pillow>=11.2.1",
+    "pillow-heif>=0.22.0",
+    "protobuf>=6.30.2",
+    "quanto>=0.2.0",
+    "scikit-learn>=1.6.1",
+    "seaborn>=0.13.2",
+    "sentencepiece>=0.2.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "transformers>=4.51.3",
+]

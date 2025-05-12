@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# custom files
+outputs
+test_image_0.jpg
+test_image_1.png
+test_image_2.png
+test_image_3.png
+人工智慧第四組資料夾
+ai_vs_real_classifier
+results

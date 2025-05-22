@@ -1,0 +1,28 @@
+paths:
+  data_dir: "./人工智慧第四組資料夾"
+  model_name: "google/vit-large-patch16-224-in21k"
+  output_dir: "./results"
+  logging_dir: "./logs"
+  final_model_path: "./ai_vs_real_classifier"
+  confusion_matrix_path: "./confusion_matrix.png"
+  # preprocess_data_directory is consolidated into data_dir as they point to the same location.
+  # preprocess_images.py will now use paths.data_dir.
+
+training:
+  num_train_epochs: 10
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  warmup_steps: 500
+  weight_decay: 0.01
+  logging_steps: 10
+  save_total_limit: 3
+  bf16: True # in TrainingArguments
+  torch_compile: True # in TrainingArguments
+
+dataset:
+  val_ratio: 0.2
+  test_ratio: 0.1
+  preprocess_batch_size: 8 # for .map()
+
+preprocessing:
+  target_extension: "jpg" # from preprocess_images.py

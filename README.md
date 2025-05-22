@@ -50,11 +50,12 @@ Here's a brief overview of the key files and directories:
     ```
 
 3.  **Install Dependencies:**
-    The project dependencies are listed in `pyproject.toml`. You can install them using `pip`:
+    The project dependencies are listed in `pyproject.toml` and also provided in `requirements.txt` for convenience with pip.
     ```bash
-    pip install transformers torch torchvision torchaudio gradio Pillow scikit-learn matplotlib seaborn
+    pip install -r requirements.txt
     ```
-    For GPU support with PyTorch (recommended for training and faster inference), follow the instructions on the [official PyTorch website](https://pytorch.org/get-started/locally/) to install the version compatible with your CUDA setup.
+    This file contains all necessary Python packages for the project.
+    For GPU support with PyTorch (recommended for training and faster inference), ensure your PyTorch installation is compatible with your CUDA setup. You might need to install a specific PyTorch version by following instructions on the [official PyTorch website](https://pytorch.org/get-started/locally/). The `requirements.txt` typically includes a CPU-compatible or a general PyTorch version.
 
 4.  **Optional: HEIC/HEIF Support:**
     The `preprocess_images.py` script can convert HEIC/HEIF images. To enable this, you need to install `pillow-heif`:
@@ -65,65 +66,85 @@ Here's a brief overview of the key files and directories:
     *   On Debian/Ubuntu: `sudo apt-get install libheif1 libde265-0`
     *   On macOS (using Homebrew): `brew install libheif`
 
+## Project Configuration (`config.yaml`)
+
+Key settings for the project are managed in the `config.yaml` file. This includes:
+
+*   **`paths`**:
+    *   `data_dir`: Path to the root dataset directory (e.g., `"./人工智慧第四組資料夾"`). **This is the primary path you might need to change.**
+    *   `model_name`: The Hugging Face model identifier for the base Vision Transformer (e.g., `"google/vit-large-patch16-224-in21k"`).
+    *   `output_dir`: Directory to save training results (like checkpoints).
+    *   `logging_dir`: Directory for training logs.
+    *   `final_model_path`: Path where the final trained model is saved (e.g., `"./ai_vs_real_classifier"`).
+    *   `confusion_matrix_path`: Path to save the generated confusion matrix image.
+*   **`training`**:
+    *   Parameters like `num_train_epochs`, `per_device_train_batch_size`, `warmup_steps`, `weight_decay`, `bf16`, `torch_compile`, etc.
+*   **`dataset`**:
+    *   `val_ratio`, `test_ratio`: Proportions for splitting the dataset.
+    *   `preprocess_batch_size`: Batch size for the dataset mapping/preprocessing step.
+*   **`preprocessing`**:
+    *   `target_extension`: The target image format (e.g., "jpg") for `preprocess_images.py`.
+
+Before running preprocessing or training, review `config.yaml` and adjust paths and parameters as needed, especially `paths.data_dir`.
+
 ## Data Preparation
 
-The model is trained to classify images as either AI-generated or real. You'll need to prepare your dataset accordingly:
+The model is trained to classify images as either AI-generated or real.
 
 1.  **Dataset Directory Structure:**
-    Create a root folder for your dataset. By default, the training script (`main.py`) expects this folder to be named `人工智慧第四組資料夾` (as seen in the script) and located in the project's root directory. Inside this folder, create two subdirectories:
-    *   `ai/`: Place all your AI-generated images in this folder.
-    *   `real/`: Place all your real photographic images in this folder.
+    *   Your dataset root folder should be specified in `config.yaml` under `paths.data_dir`.
+    *   Inside this folder, create two subdirectories:
+        *   `ai/`: Place all your AI-generated images here.
+        *   `real/`: Place all your real photographic images here.
 
-    The structure should look like this:
+    Example structure if `paths.data_dir` is set to `"./人工智慧第四組資料夾"`:
     ```
     <project-root>/
-    ├── 人工智慧第四組資料夾/
+    ├── 人工智慧第四組資料夾/  <-- This path is set in config.yaml
     │   ├── ai/
     │   │   ├── image1.jpg
-    │   │   ├── image2.png
     │   │   └── ...
     │   └── real/
     │       ├── image3.jpg
-    │       ├── image4.jpeg
     │       └── ...
+    ├── config.yaml
     ├── main.py
-    ├── app.py
     └── ...
     ```
 
 2.  **Image Formats & Preprocessing:**
-    The training script processes images using the Pillow library. While it can handle various formats, it's recommended to have images in common web formats like JPEG or PNG.
-    If you have images in HEIC/HEIF format, or other formats that need conversion, you can use the `preprocess_images.py` script.
-    *   Ensure you have installed `pillow-heif` as described in the "Setup and Installation" section if you need to process HEIC/HEIF files.
-    *   Modify the `DATA_DIRECTORY` variable at the bottom of `preprocess_images.py` if your dataset folder is named differently or located elsewhere.
-    *   Run the script from the project root:
-        ```bash
-        python preprocess_images.py
-        ```
-    This will convert images (e.g., HEIC to JPEG) and place them in the same directory structure, potentially overwriting originals if configured to do so (the script defaults to deleting originals after successful conversion if the new file has a different name or was an HEIF). Review the script's behavior if you have concerns about original files.
+    *   It's recommended to have images in common web formats like JPEG or PNG.
+    *   If you have images in HEIC/HEIF format, use `preprocess_images.py`.
+        *   Ensure `pillow-heif` is installed (see "Setup and Installation").
+        *   The script uses `paths.data_dir` and `preprocessing.target_extension` from `config.yaml`.
+        *   Run from the project root:
+            ```bash
+            python preprocess_images.py
+            ```
+    The script will convert images as configured, potentially overwriting originals if the target name is the same (e.g. a problematic JPG being re-saved as JPG) or deleting originals if `is_heif_misnamed` is true during HEIF to JPEG conversion. Review the script and `config.yaml` if you have concerns.
 
 ## Training the Model
 
-Once your dataset is prepared and dependencies are installed, you can train the image classification model:
+Once your dataset is prepared, dependencies are installed, and `config.yaml` is reviewed:
 
 1.  **Run the Training Script:**
-    Execute the `main.py` script from the project's root directory:
+    Execute `main.py` from the project's root directory:
     ```bash
     python main.py
     ```
 
 2.  **Training Process:**
-    *   The script will load images from the specified data directory (`./人工智慧第四組資料夾/` by default).
-    *   It uses a Vision Transformer model (e.g., `google/vit-large-patch16-224-in21k`) pre-trained on ImageNet, and fine-tunes it on your dataset.
-    *   A Focal Loss function is implemented to help address potential class imbalance between 'AI' and 'real' images.
-    *   The script will output training progress, including loss and evaluation metrics (accuracy, F1-score, precision, recall) for each epoch if a validation set is created.
-    *   The training arguments (like number of epochs, batch size, etc.) are defined within `main.py` and can be adjusted if needed.
+    *   The script loads images from the directory specified in `config.yaml` (`paths.data_dir`).
+    *   It uses the Vision Transformer model defined in `config.yaml` (`paths.model_name`).
+    *   A Focal Loss function is implemented to help address potential class imbalance.
+    *   Training arguments (epochs, batch size, etc.) are now sourced from `config.yaml` (`training` section).
+    *   The script outputs training progress and evaluation metrics.
 
 3.  **Output:**
-    *   **Trained Model:** The best performing model (based on F1-score on the validation set) will be saved to the `./ai_vs_real_classifier/` directory. This directory will contain files like `pytorch_model.bin`, `config.json`, etc.
-    *   **Confusion Matrix:** A visual representation of the model's performance on the test set, `confusion_matrix.png`, will be saved in the project's root directory.
+    *   **Trained Model:** Saved to the path specified in `config.yaml` (`paths.final_model_path`, e.g., `./ai_vs_real_classifier/`).
+    *   **Confusion Matrix:** Saved to the path specified in `config.yaml` (`paths.confusion_matrix_path`, e.g., `confusion_matrix.png`).
 
-**Note on Resources:** Training deep learning models, especially large ones like Vision Transformers, can be computationally intensive and may require a GPU for reasonable training times. The script is configured to use mixed-precision training (`bf16=True`) and PyTorch 2.0 compilation (`torch_compile=True`) if available, which can speed up training and reduce memory usage on compatible hardware.
+**Note on Resources:** Training deep learning models can be computationally intensive. The script uses settings from `config.yaml` for `bf16` (mixed-precision) and `torch_compile` which can optimize training on compatible hardware.
 
 ## Usage (Inference)
 
@@ -150,16 +171,16 @@ The primary way to interact with the classifier is through the Gradio web applic
 For a simpler, non-interactive way to get a prediction for a single image, you can use `inference.py`:
 
 *   **Prepare an image:** Place an image you want to test (e.g., `my_test_image.jpg`) in the project's root directory, or provide the correct path to it.
-*   **Modify `inference.py` (if needed):**
-    *   The script is currently set to load the model from `./outputs`. **Important:** The training script `main.py` saves the model to `./ai_vs_real_classifier`. You will likely need to change the `model` path in `inference.py` from `"./outputs"` to `"./ai_vs_real_classifier"` to use your trained model.
-    *   Update the image path `Image.open("test_image.jpg")` to `Image.open("your_image_name.jpg")`.
+*   **Prepare an image:** Place an image you want to test (e.g., `my_test_image.jpg`) in the project's root directory, or provide the correct path to it.
+*   **Configuration:** `inference.py` loads the model path from `config.yaml` (`paths.final_model_path`). Ensure this path is correct.
+    *   The script will try to load an image named `test_image.jpg` by default (this can be changed in the script or by making `inference.py` accept command-line arguments).
 *   **Run the script:**
     ```bash
     python inference.py
     ```
-*   The script will print the raw prediction output (a list of dictionaries with labels and scores) to the console.
+*   The script will print the raw prediction output to the console.
 
-**Note:** The Gradio application (`app.py`) is the recommended way for most users to perform inference due to its user-friendly interface and correct model path configuration by default (it loads from `./ai_vs_real_classifier`).
+**Note:** The Gradio application (`app.py`) loads the model path from `config.yaml` (`paths.final_model_path`) and is generally recommended for ease of use.
 
 ## Model Information
 
@@ -188,12 +209,17 @@ This image visually represents the model's performance by showing the counts of 
 
 Here are some potential areas for future improvement and development:
 
-*   **`requirements.txt`:** Create a `requirements.txt` file for easier pip-based dependency management, in addition to `pyproject.toml`.
-*   **Configuration File:** Move hardcoded paths (like dataset directory in `main.py` and `preprocess_images.py`) and training parameters (epochs, batch size in `main.py`) into a configuration file (e.g., YAML or JSON) for easier modification without altering the code.
-*   **Expanded Model Evaluation:** Implement more detailed evaluation, such as per-class metrics if more categories are added, or ROC curves and AUC scores.
-*   **Model Checkpointing Options:** Provide more flexible model checkpointing strategies during training (e.g., save best N models, save every K epochs).
-*   **Data Augmentation:** Explore and implement more sophisticated data augmentation techniques during training to improve model generalization.
-*   **Error Handling:** Enhance error handling and logging in the scripts.
-*   **Testing:** Add unit tests for preprocessing, training, and inference components.
-*   **Packaging:** Package the application for easier distribution (e.g., using Docker).
-*   **UI Enhancements:** Add more features to the Gradio UI, such as displaying example predictions or allowing adjustment of inference parameters.
+*   **Completed / Addressed:**
+    *   ~~`requirements.txt`~~: A `requirements.txt` file has been created and is the primary way to install dependencies.
+    *   ~~Configuration File~~: Hardcoded paths and key training parameters have been moved to `config.yaml`.
+    *   ~~Error Handling & Logging~~: Enhanced significantly across all scripts with structured logging and more robust error handling.
+    *   ~~Testing~~: Unit tests have been added for core components of each script, covering config loading, preprocessing, main training logic (FocalLoss, metrics, data preprocessing), and inference/app model loading.
+
+*   **Future Considerations:**
+    *   **Expanded Model Evaluation:** Implement more detailed evaluation, such as per-class metrics if more categories are added, or ROC curves and AUC scores.
+    *   **Model Checkpointing Options:** The current `TrainingArguments` save strategy is "epoch"; more flexible options (e.g., save best N, save every K steps) could be explored directly via Hugging Face Trainer capabilities or custom callbacks.
+    *   **Data Augmentation:** Explore and implement more sophisticated data augmentation techniques during training.
+    *   **Packaging:** Package the application for easier distribution (e.g., using Docker).
+    *   **UI Enhancements:** Add more features to the Gradio UI, such as displaying example predictions or allowing adjustment of inference parameters.
+    *   **CLI Arguments:** Add command-line arguments to scripts like `main.py` or `inference.py` to override specific `config.yaml` settings without direct file editing (e.g., for `inference.py` image path).
+    *   **Shared Utilities:** Refactor common components like config loading into a shared `utils.py` module to reduce duplication.

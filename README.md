@@ -1,4 +1,9 @@
 # AI vs. Real Image Classifier
+<div align="center">
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/yongjer/moral)
+
+</div>
 
 This project contains a machine learning model and a Gradio web application to classify images as either AI-generated or real. It utilizes Python, the Hugging Face Transformers library, PyTorch for model training and inference, and Gradio for the interactive user interface.
 The system is designed to help distinguish between photographic images and images created by artificial intelligence.
